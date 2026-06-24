@@ -1,0 +1,29 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/apar_db}
+    username: ${SPRING_DATASOURCE_USERNAME:apar_admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:apar_pass}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:dev_secret_min_256_bits_long_change_this_in_production_2026_abcd}
+    expiration-ms: 3600000
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
+
+logging:
+  level:
+    root: WARN
+    gov.nic.apar: INFO

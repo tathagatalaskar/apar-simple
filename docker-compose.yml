@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: apar_simple_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: apar_db
+      POSTGRES_USER: apar_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-apar_pass}
+    volumes:
+      - apar_pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apar_admin -d apar_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [apar_net]
+
+  backend:
+    build: ./backend
+    container_name: apar_simple_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/apar_db
+      SPRING_DATASOURCE_USERNAME: apar_admin
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-apar_pass}
+      APP_JWT_SECRET: ${JWT_SECRET:-dev_secret_min_256_bits_long_change_this_in_production_2026_abcd}
+      APP_CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+    networks: [apar_net]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api}
+    container_name: apar_simple_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    networks: [apar_net]
+
+volumes:
+  apar_pgdata:
+networks:
+  apar_net:
+    driver: bridge
